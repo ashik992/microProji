@@ -2,8 +2,11 @@
 
 var Os = require('os');
 var Https = require('https');
+var fs = require('fs');
 
 var Configuration = require('./config');
+
+var filePath = './readme.md';
 
 var projectId = Configuration.projectId;
 var stories = Configuration.stories;
@@ -46,21 +49,40 @@ stories.forEach(function (story) {
 Promise
   .all(promises)
   .then(function (storyData) {
-    var documentation = '';
+    var documentation = '| Issue # | Point | Description | Status | Comments |' + Os.EOL +
+      '|:--------:|:--------:|-----------|:------:|:--------|' + Os.EOL;
 
     storyData.forEach(function forEachStory(story) {
+      var sotryStatus;
+
+      switch(story.current_state) {
+        case 'delivered' : 
+          sotryStatus = 'Completed';
+          break;
+        case 'started' : 
+          sotryStatus = 'Continue';
+          break;
+        default:
+          sotryStatus = '';
+      }
+
       var docLine = '| [#' + story.id +
           '](https://www.pivotaltracker.com/story/show/' + story.id +
           ') | ' + story.estimate +
           ' | ' + story.name +
-          ' | ' + story.current_state.charAt(0).toUpperCase() +
-          story.current_state.slice(1) +
+          ' | ' + sotryStatus +
           ' |  |';
 
       documentation += docLine + Os.EOL
     });
 
-    console.log(documentation);
+    fs.writeFile(filePath, documentation, function(err, data){
+      if (err) {
+        console.error(err);
+      } else {
+        console.log('Status is written in', filePath);
+      }
+    })
   })
   .catch(function (ex) {
     console.error(ex);
